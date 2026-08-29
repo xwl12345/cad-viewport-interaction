@@ -1,0 +1,9 @@
+# VS 本地工程与缓存（仓库只保留 CMake 构建；本机 vcxproj 留在本地不入库）
+.vs/
+x64/
+build/
+out/
+*.vcxproj*
+*.slnx
+*.suo
+*.user
