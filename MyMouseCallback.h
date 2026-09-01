@@ -12,6 +12,9 @@
 #include <unordered_map>
 #include <memory>
 #include "model.h"
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPoints.h>
 class MyMouseCallback:public vtkCommand
 {
 public:
@@ -19,6 +22,7 @@ public:
 	{ 
 		return new MyMouseCallback; 
 	}
+	void setModel(model* modelptr);
 	virtual void  Execute(vtkObject* caller, unsigned long eventId, void* callData) override
 	{
 		//获取交互器
@@ -51,6 +55,7 @@ public:
 
 		if (eventId == vtkCommand::LeftButtonPressEvent)
 		{
+
 			m_isdraging.store(false);
 			m_position_x = position_x;
 			m_position_y = position_y;
@@ -65,9 +70,12 @@ public:
 			//处理拾取结果
 			if (highLightActor && cellId != -1)
 			{
+				
 				std::cout << "The actor is picked" << highLightActor;
 				highLightActor->GetProperty()->SetColor(1.0, 1.0, 0);
 				highLightActor->GetProperty()->SetLineWidth(6.0);
+				interactor->GetRenderWindow()->Render();
+				this->AbortFlagOn();
 			}
 			else
 			{
@@ -80,29 +88,50 @@ public:
 			int dy = clickPos[1] - m_position_y;//检查移动位置大小
 			if (dx * dx + dy * dy > 25)//超过5个像素就算拖拽
 			{
+				this->AbortFlagOn();
 				m_isdraging.store(true);
-				m_delta_x = dx;
-				m_delta_y = dy;
 			}
 		}
-		if (eventId == vtkCommand::FifthButtonReleaseEvent)
+		if (eventId == vtkCommand::LeftButtonReleaseEvent)
 		{
 			if (m_isdraging.load())
 			{
-				edge onPicked = m_model.map[actor];
-				double displayPoint[3] = { (double)(position_x+m_delta_x), (double)(position_y+m_delta_y), 0.0 };
-				double worldPoint[4];  // 齐次坐标，返回 (x, y, z, w)
-
-				renderer->SetDisplayPoint(displayPoint);
+				this->AbortFlagOn();
+				std::cout << "darging";
+				auto it = m_model->map.find(highLightActor);
+				if (it == m_model->map.end())
+				{
+					return;
+				}
+				edge& onPicked = it->second;
+				//起点像素转世界坐标
+				renderer->SetDisplayPoint((double)m_position_x, (double)m_position_y, 0.0);
 				renderer->DisplayToWorld();
-				renderer->GetWorldPoint(worldPoint);
+				double W1[4];
+				renderer->GetWorldPoint(W1);
 
-				// 归一化得到真正的三维坐标
-				double worldX = worldPoint[0] / worldPoint[3];
-				double worldY = worldPoint[1] / worldPoint[3];
-				double worldZ = worldPoint[2] / worldPoint[3];
-				onPicked.moveEdge(worldX,worldY,worldZ);
-				
+				//终点像素转世界坐标
+				renderer->SetDisplayPoint((double)position_x, (double)position_y, 0.0);
+				renderer->DisplayToWorld();
+				double W2[4];
+				renderer->GetWorldPoint(W2);
+
+				double Wx = W2[0] / W2[3] - W1[0] / W1[3];
+				double Wy= W2[1] / W2[3] - W1[1] / W1[3];
+				//通过moveEdge改变数据结构中的数据
+				onPicked.moveEdge(Wx,Wy, 0);
+
+				//同步视图
+				vtkPolyDataMapper* mapper = vtkPolyDataMapper::SafeDownCast(highLightActor->GetMapper());
+				vtkPoints* pts = mapper->GetInput()->GetPoints();
+				auto& p1 = onPicked.getPoint1();
+				auto& p2 = onPicked.getPoint2();
+				pts->SetPoint(0,p1[0], p1[1], p1[2]);
+				pts->SetPoint(1, p2[0], p2[1], p2[2]);
+				pts->Modified();
+				interactor->GetRenderWindow()->Render();
+				m_isdraging.store(false);
+
 			}
 		}
 		
@@ -112,11 +141,9 @@ protected:
 	MyMouseCallback();
 	~MyMouseCallback();
 private:
-	model m_model;
+	model* m_model=nullptr;
 	vtkSmartPointer<vtkActor> highLightActor;
 	std::atomic<bool> m_isdraging = false;//拾取标志位
 	int m_position_x;
 	int m_position_y;
-	int m_delta_x;
-	int m_delta_y;
 };

@@ -51,13 +51,23 @@ int main()
 
     vtkNew<vtkRenderWindowInteractor> interactor;
     vtkNew<MyMouseCallback> callback;
+    callback->setModel(&m_editor.getModel());
     interactor->SetRenderWindow(window);
-    interactor->AddObserver(vtkCommand::LeftButtonPressEvent, callback);
-
+    interactor->AddObserver(vtkCommand::LeftButtonPressEvent, callback,1.0);
+    interactor->AddObserver(vtkCommand::MouseMoveEvent, callback, 1.0);
+    interactor->AddObserver(vtkCommand::LeftButtonReleaseEvent, callback, 1.0);
 
     renderer->ResetCamera();
     window->Render();
     interactor->Start();
+    renderer->SetWorldPoint(point1[0], point1[1], point1[2], 1.0);
+    renderer->WorldToDisplay();
+    double* px = renderer->GetDisplayPoint();
 
+    renderer->SetDisplayPoint(px);
+    renderer->DisplayToWorld();
+    double wp[4];
+    renderer->GetWorldPoint(wp);
+    std::cout << (wp[0] / wp[3]);
     return 0;
 }

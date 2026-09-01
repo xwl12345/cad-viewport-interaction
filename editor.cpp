@@ -25,6 +25,11 @@ vtkSmartPointer<vtkActor> editor::createEdgeActor(const double p1[3],const doubl
 	actor->GetProperty()->SetLineWidth(3.0);
 	actor->GetProperty()->SetColor(0.9, 0.9, 0.9);
 
-	m_model.map.emplace(actor, m_model.edges[m_model.edges.size()]);
+	m_model.map.emplace(actor, m_model.edges.back());
     return actor;
+}
+
+model& editor::getModel()
+{
+	return m_model;
 }

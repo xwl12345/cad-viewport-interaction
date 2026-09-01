@@ -15,7 +15,9 @@ class editor
 {
 public:
 	vtkSmartPointer<vtkActor> createEdgeActor(const double p1[3], const double p2[3]);
+	model& getModel();
 	
+
 private:
 	model m_model;
 };
