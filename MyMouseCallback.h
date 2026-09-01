@@ -59,6 +59,11 @@ public:
 			m_isdraging.store(false);
 			m_position_x = position_x;
 			m_position_y = position_y;
+			double pickedWorld[3];
+			picker->GetPickPosition(pickedWorld);
+			renderer->SetWorldPoint(pickedWorld[0], pickedWorld[1], pickedWorld[2], 1.0);
+			renderer->WorldToDisplay();
+			m_pickdepth = renderer->GetDisplayPoint()[2];
 			//如果高亮actor已经存在就把他变回普通线
 			if (highLightActor != nullptr)
 			{
@@ -105,13 +110,13 @@ public:
 				}
 				edge& onPicked = it->second;
 				//起点像素转世界坐标
-				renderer->SetDisplayPoint((double)m_position_x, (double)m_position_y, 0.0);
+				renderer->SetDisplayPoint((double)m_position_x, (double)m_position_y, (double)m_pickdepth);
 				renderer->DisplayToWorld();
 				double W1[4];
 				renderer->GetWorldPoint(W1);
 
 				//终点像素转世界坐标
-				renderer->SetDisplayPoint((double)position_x, (double)position_y, 0.0);
+				renderer->SetDisplayPoint((double)position_x, (double)position_y, (double)m_pickdepth);
 				renderer->DisplayToWorld();
 				double W2[4];
 				renderer->GetWorldPoint(W2);
@@ -146,4 +151,5 @@ private:
 	std::atomic<bool> m_isdraging = false;//拾取标志位
 	int m_position_x;
 	int m_position_y;
+	double m_pickdepth;
 };
