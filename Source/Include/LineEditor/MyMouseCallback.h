@@ -11,7 +11,7 @@
 #include <vtkProperty.h>
 #include <unordered_map>
 #include <memory>
-#include "model.h"
+#include "LineEditor/model.h"
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPoints.h>

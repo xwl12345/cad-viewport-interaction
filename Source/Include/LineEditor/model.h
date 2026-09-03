@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "edge.h"
+#include "LineEditor/edge.h"
 #include <unordered_map>
 #include <vtkActor.h>
 class model

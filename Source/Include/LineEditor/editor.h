@@ -10,7 +10,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <unordered_map>
-#include "model.h"
+#include "LineEditor/model.h"
 class editor
 {
 public:

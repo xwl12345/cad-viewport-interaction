@@ -3,6 +3,7 @@
 x64/
 build/
 out/
+Output/
 *.vcxproj*
 *.slnx
 *.suo

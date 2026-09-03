@@ -10,8 +10,8 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkAutoInit.h>
-#include "editor.h"
-#include "MyMouseCallback.h"
+#include "LineEditor/editor.h"
+#include "LineEditor/MyMouseCallback.h"
 #include <unordered_map>
 VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkInteractionStyle);

@@ -1,4 +1,4 @@
-#include "edge.h"
+#include "LineEditor/edge.h"
 
 edge::edge(const double p1[3], const double p2[3])
 {

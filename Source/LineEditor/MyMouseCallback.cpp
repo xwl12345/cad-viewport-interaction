@@ -1,4 +1,4 @@
-#include "MyMouseCallback.h"
+#include "LineEditor/MyMouseCallback.h"
 
 void MyMouseCallback::setModel(model* modelptr)
 {

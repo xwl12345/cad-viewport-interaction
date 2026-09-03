@@ -1,4 +1,4 @@
-#include "editor.h"
+#include "LineEditor/editor.h"
 vtkSmartPointer<vtkActor> editor::createEdgeActor(const double p1[3],const double p2[3])
 {
 	m_model.addEdge(p1, p2);
