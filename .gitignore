@@ -8,3 +8,7 @@ Output/
 *.slnx
 *.suo
 *.user
+
+# 本机备份与环境文件（不入库）
+*.bak
+user_path_backup.txt
