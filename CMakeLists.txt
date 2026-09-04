@@ -65,7 +65,8 @@ target_include_directories(step-info PRIVATE
 add_executable(step-view
   ${SRC_DIR}/StepViewer/stepview.cpp
   ${SRC_DIR}/StepViewer/ShapeToPolyData.cpp
-  ${INC_DIR}/StepViewer/ShapeToPolyData.h)
+  ${INC_DIR}/StepViewer/ShapeToPolyData.h
+  ${INC_DIR}/StepViewer/TopologyIndex.h)
 target_include_directories(step-view PRIVATE
   ${INC_DIR}
   ${VTK_ROOT}/include
