@@ -12,7 +12,7 @@ struct TopologyIndex
 	std::vector<int> cellToFace;
 	std::vector<std::vector<vtkIdType>> faceToCell;
 
-	void Clear()   // 很短的函数直接在结构体内写 = 内联，不需要 cpp
+	void Clear()   
 	{
 		solidMap.Clear(); faceMap.Clear(); edgeMap.Clear(); vertexMap.Clear();
 		faceToSolid.clear(); edgeToFaces.clear(); vertexToEdges.clear();

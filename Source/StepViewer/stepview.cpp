@@ -29,14 +29,14 @@ int main(int argc,char* argv[])
 		return 1;
 	}
 
-	Standard_Integer root_num = reader.NbRootsForTransfer();
 	Standard_Integer transfered = reader.TransferRoots();
 
 	TopoDS_Shape oneShape = reader.OneShape();
 	ShapeToPolyData transferer;
 	vtkNew<vtkPoints> points;
 	vtkNew<vtkPolyData> polyData;
-	transferer.transferToVtk(oneShape, points, polyData);
+	TopologyIndex relationIndex;
+	transferer.transferToVtk(oneShape, points, polyData,relationIndex);
 
 	vtkNew<vtkPolyDataMapper> mapper;
 	mapper->SetInputData(polyData);
@@ -53,6 +53,7 @@ int main(int argc,char* argv[])
 	vtkNew<vtkRenderWindowInteractor> interactor;
 	interactor->SetRenderWindow(window);
 
+	std::cout << relationIndex.vertexToEdges.size();
 	renderer->ResetCamera();
 	window->Render();
 	interactor->Start();

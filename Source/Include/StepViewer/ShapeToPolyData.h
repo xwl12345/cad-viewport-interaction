@@ -12,8 +12,6 @@
 class ShapeToPolyData
 {
 public:
-	void transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* points, vtkPolyData* polyData);
-private:
-	std::vector<int> cellToFace;
-	std::vector<std::vector<vtkIdType>> faceToCell;
+	void transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* points, vtkPolyData* polyData, TopologyIndex& relationIndex);
+
 };
