@@ -54,6 +54,7 @@ int main(int argc,char* argv[])
 	vtkNew<vtkRenderWindowInteractor> interactor;
 	interactor->SetRenderWindow(window);
 	vtkNew<StepInteractorStyle> style;
+	style->SetTopologyIndex(relationIndex);
 	interactor->SetInteractorStyle(style);
 
 	renderer->ResetCamera();
