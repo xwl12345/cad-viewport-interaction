@@ -15,6 +15,7 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include "StepViewer/StepInteractorStyle.h"
 VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkInteractionStyle);
 int main(int argc,char* argv[])
@@ -52,8 +53,9 @@ int main(int argc,char* argv[])
 
 	vtkNew<vtkRenderWindowInteractor> interactor;
 	interactor->SetRenderWindow(window);
+	vtkNew<StepInteractorStyle> style;
+	interactor->SetInteractorStyle(style);
 
-	std::cout << relationIndex.vertexToEdges.size();
 	renderer->ResetCamera();
 	window->Render();
 	interactor->Start();

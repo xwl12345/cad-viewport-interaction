@@ -141,10 +141,5 @@ void ShapeToPolyData::transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* poi
 	//完成从occt实体到vtkPolyData的转化
 	polyData->SetPoints(points);
 	polyData->SetPolys(cells);
-	std::cout << "当前共有"<<relationIndex.cellToFace.size()<<"个三角形" << std::endl;
-	std::cout << "当前共有" << relationIndex.faceToCell.size() << "个面" << std::endl;
-	std::cout << polyData->GetNumberOfCells()<<std::endl;
-	std::cout << "当前共有" << relationIndex.faceMap.Extent() << "个面" <<std::endl;
-	std::cout << "当前共有" << relationIndex.edgeMap.Extent() << "条线" << std::endl;
-	std::cout << "当前共有" << relationIndex.vertexMap.Extent() << "个点"<<std::endl;
+	
 }
