@@ -15,6 +15,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkCellData.h>
 #include "StepViewer/StepInteractorStyle.h"
 VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkInteractionStyle);
@@ -39,8 +41,20 @@ int main(int argc,char* argv[])
 	TopologyIndex relationIndex;
 	transferer.transferToVtk(oneShape, points, polyData,relationIndex);
 
+	vtkNew<vtkUnsignedCharArray> cellColors;
+	cellColors->SetNumberOfComponents(3);
+	for (vtkIdType i = 0;i < polyData->GetNumberOfCells();++i)
+	{
+		cellColors->InsertNextTuple3(200, 200, 210);
+	}
+	polyData->GetCellData()->SetScalars(cellColors);
+
 	vtkNew<vtkPolyDataMapper> mapper;
 	mapper->SetInputData(polyData);
+	mapper->SetScalarModeToUseCellData();
+	mapper->SetColorModeToDirectScalars();
+
+
 
 	vtkNew<vtkActor> actor;
 	actor->SetMapper(mapper);
@@ -55,6 +69,7 @@ int main(int argc,char* argv[])
 	interactor->SetRenderWindow(window);
 	vtkNew<StepInteractorStyle> style;
 	style->SetTopologyIndex(relationIndex);
+	style->SetPolyData(polyData);
 	interactor->SetInteractorStyle(style);
 
 	renderer->ResetCamera();
