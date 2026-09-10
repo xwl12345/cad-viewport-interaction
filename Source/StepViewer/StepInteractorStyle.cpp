@@ -30,45 +30,47 @@ void StepInteractorStyle::OnLeftButtonDown()
 
 	std::cout << "cellId:" << cellId << std::endl;
 	auto* colors = vtkUnsignedCharArray::SafeDownCast(m_polyData->GetCellData()->GetScalars());
-	if (!colors || m_relationIndex == nullptr)
+
+	if (!colors)
 	{
 		return;
 	}
-	if (cellId < 0)
+
+	std::vector<vtkIdType> onPicked;
+	CollectPickedArray(cellId, onPicked);
+
+	
+	if (onPicked.empty())
 	{
 		std::cout << "未选中体" << std::endl; 
 
-		if (m_highLightFaceId != -2)
+		if (!m_lastCells.empty())
 		{
-			for (vtkIdType c : m_relationIndex->faceToCell[m_highLightFaceId])
+			for (vtkIdType c : m_lastCells)
 			{
 				colors->SetTuple3(c, 200, 200, 210);
 			}
-			m_highLightFaceId = -2;
+			m_lastCells.clear();
 		}
 	}
 	else
 	{
-		vtkIdType onPickedFaceId = m_relationIndex->cellToFace[cellId];
-		vtkIdType onPickedSolidId = m_relationIndex->faceToSolid[onPickedFaceId];
-		std::cout << "当前选中的是第" << onPickedFaceId << "个面" << std::endl;
-		std::cout << "当前选中的是第" << onPickedSolidId << "个体" << std::endl;
-		if (m_highLightFaceId == onPickedFaceId)
+		if (m_lastCells == onPicked)
 		{
 			return;
 		}
 
-		if (m_highLightFaceId != -2)
+		if (!m_lastCells.empty())
 		{
-			for (vtkIdType c : m_relationIndex->faceToCell[m_highLightFaceId])
+			for (vtkIdType c : m_lastCells)
 			{
 				colors->SetTuple3(c, 200, 200, 210);
 			}
-			m_highLightFaceId = -2;
+			m_lastCells.clear();
 		}
-		m_highLightFaceId = onPickedFaceId;
+		m_lastCells = onPicked;
 
-		for (vtkIdType c : m_relationIndex->faceToCell[m_highLightFaceId])
+		for (vtkIdType c : m_lastCells)
 		{
 			colors->SetTuple3(c, 255, 255, 0);
 		}
@@ -97,5 +99,67 @@ void StepInteractorStyle::SetTopologyIndex(TopologyIndex& relationIndex)
 void StepInteractorStyle::SetPolyData(vtkPolyData* polydata)
 {
 	this->m_polyData = polydata;
+}
+
+void StepInteractorStyle::SetSelectMode(SelectMode m)
+{
+	this->ClearThisHighLightCell();
+	m_selectMode = m;
+}
+
+void StepInteractorStyle::OnChar()
+{
+	switch(this->GetInteractor()->GetKeyCode())
+	{
+	case 'f': SetSelectMode(SelectMode::Face);std::cout << "面模式" << std::endl;return;
+	case 's': SetSelectMode(SelectMode::Solid);std::cout << "体模式" << std::endl;return;
+	default:vtkInteractorStyleTrackballCamera::OnChar();break;
+	}
+}
+
+
+
+void StepInteractorStyle::CollectPickedArray(vtkIdType cellId, std::vector<vtkIdType>& out)
+{
+	if (cellId == -1 || m_relationIndex == nullptr)
+		return;
+	int faceId = m_relationIndex->cellToFace[cellId];
+	//面模式
+	if (m_selectMode == SelectMode::Face)
+	{
+		out = m_relationIndex->faceToCell[faceId];
+	}
+	//体模式
+	if (m_selectMode == SelectMode::Solid)
+	{
+		int solidId= m_relationIndex->faceToSolid[faceId];
+		out.clear();
+		for (int f = 0;f < (int)m_relationIndex->faceToSolid.size();++f)
+		{
+			if (m_relationIndex->faceToSolid[f] == solidId)
+			{
+				for (vtkIdType c :m_relationIndex->faceToCell[f])
+				{
+					out.emplace_back(c);
+				}
+			}
+		}
+	}
+}
+
+void StepInteractorStyle::ClearThisHighLightCell()
+{
+	auto* colors = vtkUnsignedCharArray::SafeDownCast(m_polyData->GetCellData()->GetScalars());
+	if (!colors||m_relationIndex==nullptr||m_lastCells.empty())
+	{
+		return;
+	}
+	for (vtkIdType c : m_lastCells)
+	{
+		colors->SetTuple3(c, 200, 200, 210);
+	}
+	m_lastCells.clear();
+	colors->Modified();
+	this->GetInteractor()->GetRenderWindow()->Render();
 }
 
