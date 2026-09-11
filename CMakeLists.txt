@@ -87,4 +87,8 @@ if(MSVC)
   target_compile_options(vtk-line-editor PRIVATE /utf-8)
   target_compile_options(step-info        PRIVATE /utf-8)
   target_compile_options(step-view        PRIVATE /utf-8)
+
+  # VS 里 F5 调试时把工作目录设为仓库根，使默认相对路径 models/ 下的示例 STEP 可被找到
+  set_target_properties(step-info step-view PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()

@@ -16,7 +16,7 @@
 int main(int argc, char* argv[])
 {
     // 用法：step-info <文件路径>，不传则用默认路径
-    std::string file = (argc > 1) ? argv[1] : "D:/VS_Project/Muyan/TCMT1107_4.stp";
+    std::string file = (argc > 1) ? argv[1] : "models/TCMT1107_4.stp";
 
     // 1) 读文件：只是把 STEP 文本解析成 OCCT 内部的"交换模型"
     STEPControl_Reader reader;

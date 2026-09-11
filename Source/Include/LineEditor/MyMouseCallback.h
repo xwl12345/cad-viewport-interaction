@@ -56,7 +56,7 @@ public:
 		if (eventId == vtkCommand::LeftButtonPressEvent)
 		{
 
-			m_isdraging.store(false);
+			m_isdragging.store(false);
 			m_position_x = position_x;
 			m_position_y = position_y;
 			double pickedWorld[3];
@@ -94,15 +94,15 @@ public:
 			if (dx * dx + dy * dy > 25)//超过5个像素就算拖拽
 			{
 				this->AbortFlagOn();
-				m_isdraging.store(true);
+				m_isdragging.store(true);
 			}
 		}
 		if (eventId == vtkCommand::LeftButtonReleaseEvent)
 		{
-			if (m_isdraging.load())
+			if (m_isdragging.load())
 			{
 				this->AbortFlagOn();
-				std::cout << "darging";
+				std::cout << "dragging";
 				auto it = m_model->map.find(highLightActor);
 				if (it == m_model->map.end())
 				{
@@ -135,7 +135,7 @@ public:
 				pts->SetPoint(1, p2[0], p2[1], p2[2]);
 				pts->Modified();
 				interactor->GetRenderWindow()->Render();
-				m_isdraging.store(false);
+				m_isdragging.store(false);
 
 			}
 		}
@@ -148,7 +148,7 @@ protected:
 private:
 	model* m_model=nullptr;
 	vtkSmartPointer<vtkActor> highLightActor;
-	std::atomic<bool> m_isdraging = false;//拾取标志位
+	std::atomic<bool> m_isdragging = false;//拾取标志位
 	int m_position_x;
 	int m_position_y;
 	double m_pickdepth;
