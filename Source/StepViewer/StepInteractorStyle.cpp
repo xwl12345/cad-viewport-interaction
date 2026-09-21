@@ -12,11 +12,18 @@
 #include <vtkHardwareSelector.h>
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+#include <vtkPolyLine.h>
+#include <vtkCellArray.h>
+#include <vtkCoordinate.h>
+#include <vtkPolyDataMapper2D.h>
+#include <vtkActor2D.h>
+#include <vtkProperty2D.h>
 #include <iostream>
 #include <vector>
 #include <set>
 void StepInteractorStyle::OnLeftButtonDown()
 {
+	m_rubberActor->VisibilityOff();
 	m_leftButtonDown = true;
 	m_select = false;
 
@@ -43,19 +50,29 @@ void StepInteractorStyle::OnMouseMove()
 	if (m_leftButtonDown==true)
 	{
 		int* clickpos = this->GetInteractor()->GetEventPosition();
+		int x1 = clickpos[0];
+		int y1 = clickpos[1];
+
 		int dx = clickpos[0]-m_position_x;
 		int dy = clickpos[1]-m_position_y;
 		if (dx * dx + dy * dy > 25)
 		{
 			m_select = true;
 		}
-		
+		if (m_leftButtonDown && m_select)
+		{
+			m_rubberActor->VisibilityOn();
+			UpdateRubberBand(m_position_x, m_position_y, x1, y1);
+			this->GetInteractor()->GetRenderWindow()->Render();
+		}
 	}
 	vtkInteractorStyleTrackballCamera::OnMouseMove();
 }
 
 void StepInteractorStyle::OnLeftButtonUp()
 {
+	m_rubberActor->VisibilityOff();
+	this->GetInteractor()->GetRenderWindow() -> Render();
 	vtkNew<vtkCellPicker> picker;
 
 	int* clickpos = this->GetInteractor()->GetEventPosition();
@@ -257,5 +274,53 @@ void StepInteractorStyle::HighLight(std::vector<vtkIdType> onPicked)
 	}
 	colors->Modified();
 	this->GetInteractor()->GetRenderWindow()->Render();
+}
+
+void StepInteractorStyle::UpdateRubberBand(int x0, int y0, int x1, int y1)
+{
+	m_rubberPoints->SetPoint(0,x0, y0,0);
+	m_rubberPoints->SetPoint(1, x1, y0, 0);
+	m_rubberPoints->SetPoint(2, x1, y1, 0);
+	m_rubberPoints->SetPoint(3, x0, y1, 0);
+	m_rubberPoints->SetPoint(4, x0, y0, 0);
+	m_rubberPoints->Modified();
+
+}
+
+void StepInteractorStyle::InitRubberBand(vtkRenderer* renderer)
+{
+	m_rubberPoints = vtkPoints::New();
+	for (int i = 0;i < 5;++i)
+	{
+		m_rubberPoints->InsertNextPoint(0, 0, 0);
+	}
+	vtkNew<vtkPolyLine> outLine;
+	outLine->GetPointIds()->SetNumberOfIds(5);
+	for (int i = 0;i < 5;++i)
+	{
+		outLine->GetPointIds()->SetId(i, i);
+	}
+
+	vtkNew<vtkCellArray> line;
+	line->InsertNextCell(outLine);
+
+	m_rubberPolyData = vtkSmartPointer<vtkPolyData>::New();
+	m_rubberPolyData->SetPoints(m_rubberPoints);
+	m_rubberPolyData->SetLines(line);
+
+	vtkNew<vtkCoordinate> coord;
+	coord->SetCoordinateSystemToDisplay();
+
+	vtkNew<vtkPolyDataMapper2D> rubberMapper2D;
+	rubberMapper2D->SetInputData(m_rubberPolyData);
+	rubberMapper2D->SetTransformCoordinate(coord);
+
+	m_rubberActor = vtkSmartPointer<vtkActor2D>::New();
+	m_rubberActor->SetMapper(rubberMapper2D);
+	m_rubberActor->GetProperty()->SetColor(1.0, 1.0, 0.0);
+	m_rubberActor->GetProperty()->SetDisplayLocationToForeground();
+	m_rubberActor->VisibilityOff();
+
+	renderer->AddActor2D(m_rubberActor);
 }
 

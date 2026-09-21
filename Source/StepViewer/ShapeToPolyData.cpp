@@ -8,6 +8,8 @@
 #include <vtkNew.h>
 #include <vtkCellArray.h>
 #include <vtkTriangle.h>
+#include <vtkPolyLine.h>
+#include <vtkIdList.h>
 #include <BRep_Tool.hxx>
 #include <Poly_Triangle.hxx>
 #include <Poly_Triangulation.hxx>
@@ -15,6 +17,8 @@
 #include <TopExp.hxx>
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
+#include  <BRepAdaptor_Curve.hxx>
+#include <GCPnts_QuasiUniformDeflection.hxx>
 void ShapeToPolyData::transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* points, vtkPolyData* polyData, TopologyIndex& relationIndex)
 {
 	relationIndex.Clear();
@@ -142,4 +146,47 @@ void ShapeToPolyData::transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* poi
 	polyData->SetPoints(points);
 	polyData->SetPolys(cells);
 	
+}
+
+void ShapeToPolyData::transferEdgeToVtk(vtkPoints* edgePoints, vtkPolyData* edgePolyData, TopologyIndex& relationIndex)
+{
+	vtkNew<vtkCellArray> edgeCells;
+	int base;
+	for (int e = 1;e <= relationIndex.edgeMap.Extent();++e)
+	{
+		base = edgePoints->GetNumberOfPoints();
+		TopoDS_Shape now = relationIndex.edgeMap.FindKey(e);
+		TopoDS_Edge edge=TopoDS::Edge(now);
+		BRepAdaptor_Curve adaptor(edge);
+		GCPnts_QuasiUniformDeflection uDeflection(adaptor, 0.01);
+		if (uDeflection.IsDone())
+		{
+			int n= uDeflection.NbPoints();
+			for (int k=1;k <= n;++k)
+			{
+				gp_Pnt p = uDeflection.Value(k);
+				double x = p.X();
+				double y = p.Y();
+				double z = p.Z();
+				edgePoints->InsertNextPoint(x, y, z);
+			}
+			vtkNew<vtkPolyLine> line;
+			line->GetPointIds()->SetNumberOfIds(n);
+			for (int l = 0;l < n;++l)
+			{
+				line->GetPointIds()->SetId(l, base + l);
+			}
+			 edgeCells->InsertNextCell(line);
+			relationIndex.edgeCellToEdge.push_back(e - 1);
+		}
+		else
+		{
+			continue;
+		}
+
+	}
+	edgePolyData->SetPoints(edgePoints);
+	edgePolyData->SetLines(edgeCells);
+	std::cout << "边cell数: " << relationIndex.edgeCellToEdge.size() << "\n";        // 期望 180
+	std::cout << "边采样点总数: " << edgePoints->GetNumberOfPoints() << "\n";        // 应明显大于180
 }

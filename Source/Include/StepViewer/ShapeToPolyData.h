@@ -13,5 +13,5 @@ class ShapeToPolyData
 {
 public:
 	void transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* points, vtkPolyData* polyData, TopologyIndex& relationIndex);
-
+	void transferEdgeToVtk( vtkPoints* edgePoints, vtkPolyData* edgePolyData, TopologyIndex& relationIndex);
 };
