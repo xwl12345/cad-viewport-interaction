@@ -4,10 +4,13 @@
 #include <vtkSmartPointer.h>
 #include <vtkPoints.h>
 class TopologyIndex;
+class vtkActor;
 enum class SelectMode
 {
 	Solid,
-	Face
+	Face,
+	Edge,
+	Vertex
 };
 class vtkPoints;
 class vtkActor2D;
@@ -29,15 +32,20 @@ public:
 	void SetSelectMode(SelectMode m);
 	void OnChar()override;
 	void InitRubberBand(vtkRenderer* renderer);
-
+	void SetEdgeActor(vtkActor* edgeActor);
+	void SetFaceActor(vtkActor* faceActor);
+	void SetEdgePolyData(vtkPolyData* edgePolyData);
 private:
 	TopologyIndex* m_relationIndex=nullptr;
 	vtkPolyData* m_polyData=nullptr;
+	vtkPolyData* m_edgePolyData = nullptr;
 
 	vtkSmartPointer<vtkPoints> m_rubberPoints;
 	vtkSmartPointer<vtkPolyData> m_rubberPolyData;
 	vtkSmartPointer<vtkActor2D> m_rubberActor;
 
+	vtkActor* m_faceActor=nullptr;
+	vtkActor* m_edgeActor=nullptr;
 	bool m_leftButtonDown=false;
 	bool m_select = false;
 	int m_position_x=0;

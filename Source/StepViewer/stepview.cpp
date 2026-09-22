@@ -44,12 +44,19 @@ int main(int argc,char* argv[])
 	transferer.transferToVtk(oneShape, points, polyData,relationIndex);
 	transferer.transferEdgeToVtk(edgePoints, edgePolyData, relationIndex);
 	vtkNew<vtkUnsignedCharArray> cellColors;
+	vtkNew<vtkUnsignedCharArray> edgeCellColors;
 	cellColors->SetNumberOfComponents(3);
+	edgeCellColors->SetNumberOfComponents(3);
 	for (vtkIdType i = 0;i < polyData->GetNumberOfCells();++i)
 	{
 		cellColors->InsertNextTuple3(200, 200, 210);
 	}
+	for (vtkIdType i = 0;i<edgePolyData->GetNumberOfCells();++i)
+	{
+		edgeCellColors->InsertNextTuple3(40, 40, 40);
+	}
 	polyData->GetCellData()->SetScalars(cellColors);
+	edgePolyData->GetCellData()->SetScalars(edgeCellColors);
 
 	vtkNew<vtkPolyDataMapper> mapper;
 	mapper->SetInputData(polyData);
@@ -58,8 +65,8 @@ int main(int argc,char* argv[])
 
 	vtkNew<vtkPolyDataMapper> edgeMapper;
 	edgeMapper->SetInputData(edgePolyData);
-	/*edgeMapper->SetScalarModeToUseCellData();
-	edgeMapper->SetColorModeToDirectScalars();*/
+	edgeMapper->SetScalarModeToUseCellData();
+	edgeMapper->SetColorModeToDirectScalars();
 
 
 
@@ -68,8 +75,8 @@ int main(int argc,char* argv[])
 
 	vtkNew<vtkActor> edgeActor;
 	edgeActor->SetMapper(edgeMapper);
-	edgeActor->GetProperty()->SetColor(1.0, 0.1, 0.1);
-	edgeActor->GetProperty()->SetLineWidth(2.0f);
+	edgeActor->GetProperty()->SetLineWidth(4.5f);
+	edgeActor->PickableOff();
 	vtkNew<vtkRenderer> renderer;
 	renderer->AddActor(actor);
 	renderer->AddActor(edgeActor);
@@ -79,9 +86,15 @@ int main(int argc,char* argv[])
 
 	vtkNew<vtkRenderWindowInteractor> interactor;
 	interactor->SetRenderWindow(window);
+
 	vtkNew<StepInteractorStyle> style;
+
 	style->SetTopologyIndex(relationIndex);
 	style->SetPolyData(polyData);
+	style->SetEdgePolyData(edgePolyData);
+	style->SetEdgeActor(edgeActor);
+	style->SetFaceActor(actor);
+
 	interactor->SetInteractorStyle(style);
 	style->InitRubberBand(renderer);
 	renderer->ResetCamera();

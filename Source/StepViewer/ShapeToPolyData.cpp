@@ -152,6 +152,7 @@ void ShapeToPolyData::transferEdgeToVtk(vtkPoints* edgePoints, vtkPolyData* edge
 {
 	vtkNew<vtkCellArray> edgeCells;
 	int base;
+	relationIndex.edgeToEdgeCell.resize(relationIndex.edgeMap.Extent());
 	for (int e = 1;e <= relationIndex.edgeMap.Extent();++e)
 	{
 		base = edgePoints->GetNumberOfPoints();
@@ -176,8 +177,9 @@ void ShapeToPolyData::transferEdgeToVtk(vtkPoints* edgePoints, vtkPolyData* edge
 			{
 				line->GetPointIds()->SetId(l, base + l);
 			}
-			 edgeCells->InsertNextCell(line);
+			vtkIdType cellId= edgeCells->InsertNextCell(line);
 			relationIndex.edgeCellToEdge.push_back(e - 1);
+			relationIndex.edgeToEdgeCell[e - 1].push_back(cellId);
 		}
 		else
 		{
@@ -187,6 +189,5 @@ void ShapeToPolyData::transferEdgeToVtk(vtkPoints* edgePoints, vtkPolyData* edge
 	}
 	edgePolyData->SetPoints(edgePoints);
 	edgePolyData->SetLines(edgeCells);
-	std::cout << "边cell数: " << relationIndex.edgeCellToEdge.size() << "\n";        // 期望 180
-	std::cout << "边采样点总数: " << edgePoints->GetNumberOfPoints() << "\n";        // 应明显大于180
+	
 }
