@@ -35,17 +35,23 @@ public:
 	void SetEdgeActor(vtkActor* edgeActor);
 	void SetFaceActor(vtkActor* faceActor);
 	void SetEdgePolyData(vtkPolyData* edgePolyData);
+	void SetVertexPolyData(vtkPolyData* vertexPolyData);
+	void SetVertexActor(vtkActor* vertexActor);
+
 private:
 	TopologyIndex* m_relationIndex=nullptr;
 	vtkPolyData* m_polyData=nullptr;
 	vtkPolyData* m_edgePolyData = nullptr;
+	vtkPolyData* m_vertexPolyData = nullptr;
 
 	vtkSmartPointer<vtkPoints> m_rubberPoints;
 	vtkSmartPointer<vtkPolyData> m_rubberPolyData;
 	vtkSmartPointer<vtkActor2D> m_rubberActor;
 
-	vtkActor* m_faceActor=nullptr;
+	vtkActor* m_vertexActor = nullptr;
 	vtkActor* m_edgeActor=nullptr;
+	vtkActor* m_faceActor = nullptr;
+
 	bool m_leftButtonDown=false;
 	bool m_select = false;
 	int m_position_x=0;

@@ -40,13 +40,18 @@ int main(int argc,char* argv[])
 	vtkNew<vtkPolyData> polyData;
 	vtkNew<vtkPoints> edgePoints;
 	vtkNew<vtkPolyData> edgePolyData;
+	vtkNew<vtkPoints> vertexPoints;
+	vtkNew<vtkPolyData> vertexPolyData;
 	TopologyIndex relationIndex;
 	transferer.transferToVtk(oneShape, points, polyData,relationIndex);
 	transferer.transferEdgeToVtk(edgePoints, edgePolyData, relationIndex);
+	transferer.transferVertexToVtk(vertexPoints, vertexPolyData, relationIndex);
 	vtkNew<vtkUnsignedCharArray> cellColors;
 	vtkNew<vtkUnsignedCharArray> edgeCellColors;
+	vtkNew<vtkUnsignedCharArray> vertexCellColors;
 	cellColors->SetNumberOfComponents(3);
 	edgeCellColors->SetNumberOfComponents(3);
+	vertexCellColors->SetNumberOfComponents(3);
 	for (vtkIdType i = 0;i < polyData->GetNumberOfCells();++i)
 	{
 		cellColors->InsertNextTuple3(200, 200, 210);
@@ -55,8 +60,14 @@ int main(int argc,char* argv[])
 	{
 		edgeCellColors->InsertNextTuple3(40, 40, 40);
 	}
+	for (vtkIdType i = 0;i < vertexPolyData->GetNumberOfCells();++i)
+	{
+		vertexCellColors->InsertNextTuple3(0, 110, 220);
+	}
+
 	polyData->GetCellData()->SetScalars(cellColors);
 	edgePolyData->GetCellData()->SetScalars(edgeCellColors);
+	vertexPolyData->GetCellData()->SetScalars(vertexCellColors);
 
 	vtkNew<vtkPolyDataMapper> mapper;
 	mapper->SetInputData(polyData);
@@ -68,8 +79,11 @@ int main(int argc,char* argv[])
 	edgeMapper->SetScalarModeToUseCellData();
 	edgeMapper->SetColorModeToDirectScalars();
 
-
-
+	vtkNew<vtkPolyDataMapper> vertexMapper;
+	vertexMapper->SetInputData(vertexPolyData);
+	vertexMapper->SetScalarModeToUseCellData();
+	vertexMapper->SetColorModeToDirectScalars();
+ 
 	vtkNew<vtkActor> actor;
 	actor->SetMapper(mapper);
 
@@ -77,9 +91,15 @@ int main(int argc,char* argv[])
 	edgeActor->SetMapper(edgeMapper);
 	edgeActor->GetProperty()->SetLineWidth(4.5f);
 	edgeActor->PickableOff();
+
+	vtkNew<vtkActor> vertexActor;
+	vertexActor->SetMapper(vertexMapper);
+	vertexActor->GetProperty()->SetPointSize(8.0f);
+
 	vtkNew<vtkRenderer> renderer;
 	renderer->AddActor(actor);
 	renderer->AddActor(edgeActor);
+	renderer->AddActor(vertexActor);
 
 	vtkNew<vtkRenderWindow> window;
 	window->AddRenderer(renderer);
@@ -92,11 +112,14 @@ int main(int argc,char* argv[])
 	style->SetTopologyIndex(relationIndex);
 	style->SetPolyData(polyData);
 	style->SetEdgePolyData(edgePolyData);
+	style->SetVertexPolyData(vertexPolyData);
 	style->SetEdgeActor(edgeActor);
 	style->SetFaceActor(actor);
-
+	style->SetVertexActor(vertexActor);
+	
 	interactor->SetInteractorStyle(style);
 	style->InitRubberBand(renderer);
+	style->SetSelectMode(SelectMode::Face);
 	renderer->ResetCamera();
 	window->Render();
 	interactor->Start();

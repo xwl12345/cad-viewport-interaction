@@ -19,6 +19,7 @@
 #include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include  <BRepAdaptor_Curve.hxx>
 #include <GCPnts_QuasiUniformDeflection.hxx>
+#include <vtkVertex.h>
 void ShapeToPolyData::transferToVtk(const TopoDS_Shape& oneShape, vtkPoints* points, vtkPolyData* polyData, TopologyIndex& relationIndex)
 {
 	relationIndex.Clear();
@@ -190,4 +191,26 @@ void ShapeToPolyData::transferEdgeToVtk(vtkPoints* edgePoints, vtkPolyData* edge
 	edgePolyData->SetPoints(edgePoints);
 	edgePolyData->SetLines(edgeCells);
 	
+}
+
+void ShapeToPolyData::transferVertexToVtk(vtkPoints* vertexPoints, vtkPolyData* vertexPolyData, TopologyIndex& relationIndex)
+{
+	vtkNew<vtkCellArray> vertexCells;
+	relationIndex.vertexToVertexCell.resize(relationIndex.vertexMap.Extent());
+	for (int v = 1;v <= relationIndex.vertexMap.Extent();++v)
+	{
+		TopoDS_Vertex vt = TopoDS::Vertex(relationIndex.vertexMap.FindKey(v));
+		gp_Pnt p = BRep_Tool::Pnt(vt);
+		p.Transform(vt.Location().Transformation());
+
+		vtkIdType pid=vertexPoints->InsertNextPoint(p.X(), p.Y(), p.Z());
+
+		vtkNew<vtkVertex> vertex;
+		vertex->GetPointIds()->SetId(0, pid);
+		vtkIdType vertexId=vertexCells->InsertNextCell(vertex);
+		relationIndex.vertexCellToVertex.push_back(v - 1);
+		relationIndex.vertexToVertexCell[v - 1].push_back(vertexId);
+ 	}
+	vertexPolyData->SetPoints(vertexPoints);
+	vertexPolyData->SetVerts(vertexCells);
 }

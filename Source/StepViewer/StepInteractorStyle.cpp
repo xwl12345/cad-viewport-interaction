@@ -79,7 +79,9 @@ void StepInteractorStyle::OnLeftButtonUp()
 	int position_x = clickpos[0];
 	int position_y = clickpos[1];
 	vtkRenderer* renderer = this->GetInteractor()->GetRenderWindow()->GetRenderers()->GetFirstRenderer();
-	picker->SetTolerance(0.005);
+	double tol;
+	tol = 0.005;
+	picker->SetTolerance(tol);
 
 	if (m_select == false)
 	{
@@ -130,7 +132,6 @@ void StepInteractorStyle::OnLeftButtonUp()
 					{
 						vtkIdType cellId = ids->GetValue(j);
 						seeds.emplace_back(cellId);
-						std::cout << cellId << std::endl;
 					}
 				}
 			}
@@ -156,6 +157,9 @@ void StepInteractorStyle::SetSelectMode(SelectMode m)
 {
 	this->ClearThisHighLightCell();
 	m_selectMode = m;
+	m_faceActor->SetPickable((m == SelectMode::Face) || (m == SelectMode::Solid));
+	m_edgeActor->SetPickable(m == SelectMode::Edge);
+	m_vertexActor->SetPickable(m == SelectMode::Vertex);
 }
 
 void StepInteractorStyle::OnChar()
@@ -165,20 +169,18 @@ void StepInteractorStyle::OnChar()
 	case 'f': 
 		SetSelectMode(SelectMode::Face);
 		std::cout << "面模式" << std::endl;
-		m_edgeActor->PickableOff();
-		m_faceActor->PickableOn();
 		return;
 	case 's': 
 		SetSelectMode(SelectMode::Solid);
 		std::cout << "体模式" << std::endl;
-		m_edgeActor->PickableOff();
-		m_faceActor->PickableOn();
 		return;
 	case 'e': 
 		SetSelectMode(SelectMode::Edge);
 		std:: cout << "线模式" << std::endl;
-		m_edgeActor->PickableOn();
-		m_faceActor->PickableOff();
+		return;
+	case 'v':
+		SetSelectMode(SelectMode::Vertex);
+		std::cout << "点模式" << std::endl;
 		return;
 	default:vtkInteractorStyleTrackballCamera::OnChar();break;
 	}
@@ -193,13 +195,59 @@ void StepInteractorStyle::CollectPickedArray(const std::vector<vtkIdType>& seeds
 	{
 		return;
 	}
+
+	vtkIdType layerCellCount = 0;
+	if (m_selectMode == SelectMode::Vertex)
+	{
+		layerCellCount = (vtkIdType)m_relationIndex->vertexCellToVertex.size();
+	}
+	else if (m_selectMode == SelectMode::Edge)
+	{
+		layerCellCount = (vtkIdType)m_relationIndex->edgeCellToEdge.size();
+	}
+	else
+	{
+		layerCellCount = (vtkIdType)m_relationIndex->cellToFace.size();
+	}
+
+	std::vector<vtkIdType> safe;
+
+	for (vtkIdType s : seeds)
+	{
+		if (s >= 0 && s < layerCellCount) 
+		{
+			safe.push_back(s);
+		}
+	}
+	if (safe.empty())
+	{
+		return;
+	}
+	//点模式
+	if (m_selectMode == SelectMode::Vertex)
+	{
+		std::set<vtkIdType> vertexSet;
+		for (int i = 0;i < safe.size();++i)
+		{
+			vtkIdType now = m_relationIndex->vertexCellToVertex[safe[i]];
+			vertexSet.emplace(now);
+		}
+		for (auto vertexId : vertexSet)
+		{
+			for (auto v : m_relationIndex->vertexToVertexCell[vertexId])
+			{
+				out.emplace_back(v);
+			}
+		}
+		return;
+	}
 	//线模式
 	if (m_selectMode == SelectMode::Edge)
 	{
 		std::set<vtkIdType>  edgeSet;
-		for (int i = 0;i < seeds.size();++i)
+		for (int i = 0;i < safe.size();++i)
 		{
-			vtkIdType now = m_relationIndex->edgeCellToEdge[seeds[i]];
+			vtkIdType now = m_relationIndex->edgeCellToEdge[safe[i]];
 			edgeSet.emplace(now);
 		}
 		for (auto edgeId : edgeSet)
@@ -216,9 +264,9 @@ void StepInteractorStyle::CollectPickedArray(const std::vector<vtkIdType>& seeds
 	//面体选中
 	{
 		std::set<vtkIdType> faceSet;
-		for (int i = 0;i < seeds.size();++i)
+		for (int i = 0;i < safe.size();++i)
 		{
-			vtkIdType now = m_relationIndex->cellToFace[seeds[i]];
+			vtkIdType now = m_relationIndex->cellToFace[safe[i]];
 			faceSet.emplace(now);
 		}
 		//面模式
@@ -274,7 +322,7 @@ void StepInteractorStyle::ClearThisHighLightCell()
 		}
 		colors->Modified();
 	}
-	else
+	else if (m_selectMode == SelectMode::Face || m_selectMode == SelectMode::Solid)
 	{
 		auto* colors = vtkUnsignedCharArray::SafeDownCast(m_polyData->GetCellData()->GetScalars());
 		if (!colors || m_relationIndex == nullptr || m_lastCells.empty())
@@ -284,6 +332,19 @@ void StepInteractorStyle::ClearThisHighLightCell()
 		for (vtkIdType c : m_lastCells)
 		{
 			colors->SetTuple3(c, 200, 200, 210);
+		}
+		colors->Modified();
+	}
+	else
+	{
+		auto* colors = vtkUnsignedCharArray::SafeDownCast(m_vertexPolyData->GetCellData()->GetScalars());
+		if (!colors || m_relationIndex == nullptr || m_lastCells.empty())
+		{
+			return;
+		}
+		for (vtkIdType c : m_lastCells)
+		{
+			colors->SetTuple3(c, 0,110,220);
 		}
 		colors->Modified();
 	}
@@ -300,11 +361,14 @@ void StepInteractorStyle::HighLight(std::vector<vtkIdType> onPicked)
 	{
 		colors= vtkUnsignedCharArray::SafeDownCast(m_edgePolyData->GetCellData()->GetScalars());
 	}
-	else
+	else if(m_selectMode==SelectMode::Face||m_selectMode==SelectMode::Solid)
 	{
 		colors = vtkUnsignedCharArray::SafeDownCast(m_polyData->GetCellData()->GetScalars());
 	}
-
+	else
+	{
+		colors = vtkUnsignedCharArray::SafeDownCast(m_vertexPolyData->GetCellData()->GetScalars());
+	}
 	if (!colors)
 	{
 		return;
@@ -312,7 +376,6 @@ void StepInteractorStyle::HighLight(std::vector<vtkIdType> onPicked)
 
 	if (onPicked.empty())
 	{
-		std::cout << "未选中体" << std::endl;
 
 		if (!m_lastCells.empty())
 		{
@@ -403,5 +466,15 @@ void StepInteractorStyle::SetFaceActor(vtkActor* faceActor)
 void StepInteractorStyle::SetEdgePolyData(vtkPolyData* edgePolyData)
 {
 	m_edgePolyData = edgePolyData;
+}
+
+void StepInteractorStyle::SetVertexPolyData(vtkPolyData* vertexPolyData)
+{
+	m_vertexPolyData = vertexPolyData;
+}
+
+void StepInteractorStyle::SetVertexActor(vtkActor* vertexActor)
+{
+	m_vertexActor = vertexActor;
 }
 

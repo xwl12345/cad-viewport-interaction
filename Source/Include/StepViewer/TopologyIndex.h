@@ -13,11 +13,14 @@ struct TopologyIndex
 	std::vector<std::vector<vtkIdType>> faceToCell;
 	std::vector<int> edgeCellToEdge;
 	std::vector<std::vector<vtkIdType>> edgeToEdgeCell;
+	std::vector<int> vertexCellToVertex;
+	std::vector<std::vector<vtkIdType>> vertexToVertexCell;
 	void Clear()   
 	{
 		solidMap.Clear(); faceMap.Clear(); edgeMap.Clear(); vertexMap.Clear();
 		faceToSolid.clear(); edgeToFaces.clear(); vertexToEdges.clear();
-		cellToFace.clear(); faceToCell.clear();edgeCellToEdge.clear();edgeToEdgeCell.clear();
-
+		cellToFace.clear(); faceToCell.clear();
+		edgeCellToEdge.clear();edgeToEdgeCell.clear();
+		vertexCellToVertex.clear();vertexToVertexCell.clear();
 	}
 };
