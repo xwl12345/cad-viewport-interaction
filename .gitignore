@@ -9,6 +9,9 @@ Output/
 *.suo
 *.user
 
+# 第三方库（VTK/OCCT，体积大，本机自编或随压缩包分发，不入 git）
+ThirdParty/
+
 # 本机备份与环境文件（不入库）
 *.bak
 user_path_backup.txt
