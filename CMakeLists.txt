@@ -19,24 +19,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ---------- 统一源码/头文件根目录 ----------
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source)
 set(INC_DIR ${SRC_DIR}/Include)
-
-# ---------- 统一输出目录：Output/，VS 多配置会自动再分 Release/Debug ----------
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Output")
 
-# ---------- 第 2 步：第三方库根目录（手动整理的安装树，无 find_package 配置） ----------
-set(VTK_ROOT "" CACHE PATH "VTK 根目录（其下含 include/ 与 lib/）")
-if(NOT VTK_ROOT)
-  message(FATAL_ERROR
-    "请指定 VTK 根目录，例如：cmake -S . -B build -DVTK_ROOT=D:/path/to/VTK-9.3.0")
-endif()
+find_package(VTK 9.3 REQUIRED COMPONENTS
+  CommonCore
+  CommonDataModel
+  InteractionStyle
+  RenderingCore
+  vtksys
+  RenderingOpenGL2)
 
-set(OCCT_ROOT "" CACHE PATH "OCCT 根目录（其下含 include/ 与 lib/）")
-if(NOT OCCT_ROOT)
-  message(FATAL_ERROR
-    "请指定 OCCT 根目录，例如：cmake -S . -B build -DOCCT_ROOT=D:/path/to/OCCT")
-endif()
+  find_package(OpenCASCADE 7.8.0 REQUIRED)
 
-# ---------- 第 3 步：三个可执行目标 ----------
+  set(VTK_DBG_PATH "PATH=${VTK_PREFIX_PATH}/bin;%PATH%")
+  set(OCCT_DBG_PATH "PATH=${VTK_PREFIX_PATH}/bin;${OpenCASCADE_BINARY_DIR};%PATH%")
+
+  set(OCCT_TOOLKITS TKernel TKMath TKG3d TKGeomBase TKBRep TKMesh TKXSBase TKDESTEP)
 
 # 目标 A：线拖拽学习程序（纯 VTK）
 add_executable(vtk-line-editor
@@ -50,16 +48,19 @@ add_executable(vtk-line-editor
   ${INC_DIR}/LineEditor/model.h
   ${INC_DIR}/LineEditor/MyMouseCallback.h)
 # 自有头文件根(Source/Include) + VTK 头文件；cpp 里写 #include "LineEditor/xxx.h"
-target_include_directories(vtk-line-editor PRIVATE
-  ${INC_DIR}
-  ${VTK_ROOT}/include)
+target_include_directories(vtk-line-editor PRIVATE ${INC_DIR})
+target_link_libraries(vtk-line-editor PRIVATE ${VTK_LIBRARIES})
+target_compile_options(vtk-line-editor PRIVATE /utf-8)
+set_target_properties(vtk-line-editor PROPERTIES VS_DEBUGGER_ENVIRONMENT "${VTK_DBG_PATH}")
 
 # 目标 B：STEP 读取演示（纯 OCCT）
-add_executable(step-info
-  ${SRC_DIR}/StepInfo/stepinfo.cpp)
-target_include_directories(step-info PRIVATE
-  ${INC_DIR}
-  ${OCCT_ROOT}/include)
+add_executable(step-info ${SRC_DIR}/StepInfo/stepinfo.cpp)
+target_include_directories(step-info PRIVATE ${INC_DIR} ${OpenCASCADE_INCLUDE_DIR})
+target_link_libraries(step-info PRIVATE ${OCCT_TOOLKITS})
+target_compile_options(step-info PRIVATE /utf-8)
+set_target_properties(step-info PROPERTIES 
+VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+VS_DEBUGGER_ENVIRONMENT "${OCCT_DBG_PATH}")
 
 # 目标 C：STEP -> VTK 显示（VTK + OCCT）
 add_executable(step-view
@@ -69,26 +70,13 @@ add_executable(step-view
   ${INC_DIR}/StepViewer/ShapeToPolyData.h
   ${INC_DIR}/StepViewer/TopologyIndex.h
   ${INC_DIR}/StepViewer/StepInteractorStyle.h)
-target_include_directories(step-view PRIVATE
-  ${INC_DIR}
-  ${VTK_ROOT}/include
-  ${OCCT_ROOT}/include)
+target_include_directories(step-view PRIVATE ${INC_DIR} ${OpenCASCADE_INCLUDE_DIR})
+target_link_libraries(step-view PRIVATE ${VTK_LIBRARIES} ${OCCT_TOOLKITS})
+target_compile_options(step-view PRIVATE /utf-8)
+set_target_properties(step-view PROPERTIES
+VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+VS_DEBUGGER_ENVIRONMENT "${OCCT_DBG_PATH}")
+ 
+vtk_module_autoinit(TARGETS vtk-line-editor step-view MODULES ${VTK_LIBRARIES})
 
-# ---------- 第 4 步：链接库（Windows + MSVC，学习期一次性 GLOB 全部 .lib） ----------
-if(MSVC)
-  file(GLOB VTK_LIBS  "${VTK_ROOT}/lib/Release/*.lib")
-  file(GLOB OCCT_LIBS "${OCCT_ROOT}/lib/release/*.lib")
 
-  target_link_libraries(vtk-line-editor PRIVATE ${VTK_LIBS})
-  target_link_libraries(step-info        PRIVATE ${OCCT_LIBS})
-  target_link_libraries(step-view        PRIVATE ${VTK_LIBS} ${OCCT_LIBS})
-
-  # 源文件为 UTF-8（含中文注释），让 MSVC 按 UTF-8 解析，避免 C4819/C2065
-  target_compile_options(vtk-line-editor PRIVATE /utf-8)
-  target_compile_options(step-info        PRIVATE /utf-8)
-  target_compile_options(step-view        PRIVATE /utf-8)
-
-  # VS 里 F5 调试时把工作目录设为仓库根，使默认相对路径 models/ 下的示例 STEP 可被找到
-  set_target_properties(step-info step-view PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()

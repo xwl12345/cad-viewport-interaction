@@ -18,8 +18,7 @@
 #include <vtkCellData.h>
 #include <vtkProperty.h>
 #include "StepViewer/StepInteractorStyle.h"
-VTK_MODULE_INIT(vtkRenderingOpenGL2);
-VTK_MODULE_INIT(vtkInteractionStyle);
+
 int main(int argc,char* argv[])
 {
 	SetConsoleOutputCP(CP_UTF8);
